@@ -13494,3 +13494,10 @@ INFO:tornado.access:304 GET /extensions/MathZoom.js?V=2.7.1 (127.0.0.1) 8.24ms
 INFO:tornado.access:200 POST /env/faster-rcnn (127.0.0.1) 0.26ms
 INFO:tornado.access:200 POST /env/faster-rcnn (127.0.0.1) 0.31ms
 INFO:tornado.access:200 POST /env/faster-rcnn (127.0.0.1) 0.27ms
+/home/lenovo/.local/lib/python3.7/site-packages/visdom/server.py:39: DeprecationWarning: zmq.eventloop.ioloop is deprecated in pyzmq 17. pyzmq now works with default tornado and asyncio eventloops.
+  ioloop.install()  # Needs to happen before any tornado imports!
+INFO:root:Application Started
+INFO:tornado.access:200 POST /env/faster-rcnn (127.0.0.1) 0.32ms
+INFO:tornado.access:200 POST /events (127.0.0.1) 1.48ms
+INFO:tornado.access:200 POST /events (127.0.0.1) 1.36ms
+INFO:tornado.access:200 POST /events (127.0.0.1) 0.32ms
