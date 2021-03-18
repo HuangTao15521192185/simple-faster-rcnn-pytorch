@@ -21,7 +21,7 @@ def decom_vgg16():
 
     features = list(model.features)[:30]
     if opt.use_multi_conv:
-        features.appned(Inception(512,128,(128,320),64))
+        features.append(Inception(512,128,(128,320),64))
     classifier = model.classifier
 
     classifier = list(classifier)
