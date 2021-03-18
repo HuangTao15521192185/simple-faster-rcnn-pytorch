@@ -4,6 +4,7 @@ import os
 import ipdb
 import matplotlib
 from tqdm import tqdm
+import datetime
 
 from utils.config import opt
 from data.dataset import Dataset, TestDataset, inverse_normalize
@@ -71,6 +72,7 @@ def train(**kwargs):
     trainer.vis.text(dataset.db.label_names, win='labels')
     best_map = 0
     lr_ = opt.lr
+    starttime = datetime.datetime.now()
     for epoch in range(opt.epoch):
         trainer.reset_meters()
         for ii, (img, bbox_, label_, scale) in tqdm(enumerate(dataloader)):
@@ -122,6 +124,8 @@ def train(**kwargs):
 
         if epoch == 13: 
             break
+    endtime = datetime.datetime.now()
+    print("used_seconds=",(endtime-starttime).seconds)
 
 
 if __name__ == '__main__':
