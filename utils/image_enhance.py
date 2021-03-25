@@ -61,6 +61,7 @@ class DarkChannelPrior(object):
         if bGamma:
             Y = Y ** (np.log(0.5) / np.log(Y.mean()))       # gamma校正,默认不进行该操作
         Y = Y*255  # 反归一化
+        Y = cv2.convertScaleAbs(Y)
         return Y
 
 # retinex SSR
@@ -88,9 +89,11 @@ class SSRetinex(object):
     def SSR_image(self, image):
         size = 3
         b_gray, g_gray, r_gray = cv2.split(image)
+        #print('b_shape=', b_gray.shape, 'g_shape=',b_gray.shape, 'r_shape=', b_gray.shape)
         b_gray = self.SSR(b_gray, size)
         g_gray = self.SSR(g_gray, size)
         r_gray = self.SSR(r_gray, size)
+        #print('after,b_shape=', b_gray.shape, 'g_shape=',b_gray.shape, 'r_shape=', b_gray.shape)
         result = cv2.merge([b_gray, g_gray, r_gray])
         return result
 
@@ -211,6 +214,21 @@ class Image_Tool(object):
         image_clahe = cv2.merge([b, g, r])
         return image_clahe
 
+    def colorbalance(self, img):
+        b, g, r = cv2.split(img)
+        B = np.mean(b)
+        G = np.mean(g)
+        R = np.mean(r)
+        K = (R + G + B) / 3
+        Kb = (K / B)*0.8
+        Kg = (K / G)*0.8
+        Kr = (K / R)*0.8
+        cv2.addWeighted(b, Kb, 0, 0, 0, b)
+        cv2.addWeighted(g, Kg, 0, 0, 0, g)
+        cv2.addWeighted(r, Kr, 0, 0, 0, r)
+        merged = cv2.merge([b, g, r])
+        return merged
+
 
 class Image_Enhance(object):
     def __init__(self):
@@ -218,12 +236,14 @@ class Image_Enhance(object):
 
     def __call__(self, image):
         img = cv2.imread(image)
-        dcp_img = DarkChannelPrior().deHaze(img)
-        hsi_img = Image_Tool().RGB2HSI(dcp_img)
+        cb_img=Image_Tool().colorbalance(img)
+        dcp_img = DarkChannelPrior().deHaze(cb_img)
+        #hsi_img = Image_Tool().RGB2HSI(dcp_img)
         ssr_img = SSRetinex().SSR_image(dcp_img)
-        bgr_img = Image_Tool().HSI2RGB(ssr_img)
+        #bgr_img = Image_Tool().HSI2RGB(ssr_img)
         result = Image_Tool().clahe(ssr_img)
         return result
+
 
 if __name__ == '__main__':
     # darhchnnelprior = DarkChannelPrior()
@@ -231,6 +251,8 @@ if __name__ == '__main__':
     #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization.png'))
     # cv2.imwrite(
     #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization_02.png', m)
-    image_enhance=Image_Enhance()
-    result = image_enhance('/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization.png')
-    cv2.imwrite('/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/output.png', result)
+    image_enhance = Image_Enhance()
+    result = image_enhance(
+        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088.jpg')
+    cv2.imwrite(
+        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088_out.jpg', result)
