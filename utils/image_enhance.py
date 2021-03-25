@@ -220,9 +220,9 @@ class Image_Tool(object):
         G = np.mean(g)
         R = np.mean(r)
         K = (R + G + B) / 3
-        Kb = (K / B)*0.8
-        Kg = (K / G)*0.8
-        Kr = (K / R)*0.8
+        Kb = K / B
+        Kg = K / G
+        Kr = K / R
         cv2.addWeighted(b, Kb, 0, 0, 0, b)
         cv2.addWeighted(g, Kg, 0, 0, 0, g)
         cv2.addWeighted(r, Kr, 0, 0, 0, r)
@@ -237,11 +237,15 @@ class Image_Enhance(object):
     def __call__(self, image):
         img = cv2.imread(image)
         cb_img=Image_Tool().colorbalance(img)
-        dcp_img = DarkChannelPrior().deHaze(cb_img)
-        #hsi_img = Image_Tool().RGB2HSI(dcp_img)
-        ssr_img = SSRetinex().SSR_image(dcp_img)
+        dcp_img = DarkChannelPrior().deHaze(img)
+        img1 = img.copy()
+        img2 = img.copy()
+        # #hsi_img = Image_Tool().RGB2HSI(dcp_img)
+        ssr_img = SSRetinex().SSR_image(img)
         #bgr_img = Image_Tool().HSI2RGB(ssr_img)
-        result = Image_Tool().clahe(ssr_img)
+        cv2.addWeighted(cb_img, 0.5, dcp_img, 0.5, 0, img1)
+        cv2.addWeighted(img1, 0.8, ssr_img, 0.2, 0, img2)
+        result = Image_Tool().clahe(img2)
         return result
 
 
@@ -253,6 +257,6 @@ if __name__ == '__main__':
     #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization_02.png', m)
     image_enhance = Image_Enhance()
     result = image_enhance(
-        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088.jpg')
+        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000064.jpg')
     cv2.imwrite(
-        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088_out.jpg', result)
+        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000064_out.jpg', result)
