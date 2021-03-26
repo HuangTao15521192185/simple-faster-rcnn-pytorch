@@ -229,6 +229,15 @@ class Image_Tool(object):
         merged = cv2.merge([b, g, r])
         return merged
 
+    def high_pass_filter(self,img):
+        x=cv2.Sobel(img,-1,1,0)
+        y=cv2.Sobel(img,-1,0,1)
+
+        absx=cv2.convertScaleAbs(x)
+        absy=cv2.convertScaleAbs(y)
+        dist=cv2.addWeighted(absx,1,absy,1,0)
+        return dist
+
 
 class Image_Enhance(object):
     def __init__(self):
@@ -236,16 +245,17 @@ class Image_Enhance(object):
 
     def __call__(self, image):
         img = cv2.imread(image)
-        cb_img=Image_Tool().colorbalance(img)
-        dcp_img = DarkChannelPrior().deHaze(img)
+        image_tool = Image_Tool()
         img1 = img.copy()
         img2 = img.copy()
-        # #hsi_img = Image_Tool().RGB2HSI(dcp_img)
+        cb_img=image_tool.colorbalance(img)
+        dcp_img = DarkChannelPrior().deHaze(img)  
+        #hsi_img = image_tool.RGB2HSI(dcp_img)
         ssr_img = SSRetinex().SSR_image(img)
-        #bgr_img = Image_Tool().HSI2RGB(ssr_img)
-        cv2.addWeighted(cb_img, 0.5, dcp_img, 0.5, 0, img1)
-        cv2.addWeighted(img1, 0.8, ssr_img, 0.2, 0, img2)
-        result = Image_Tool().clahe(img2)
+        #bgr_img = image_tool.HSI2RGB(ssr_img)
+        cv2.addWeighted(cb_img,0.7,dcp_img,0.7,0,img1)
+        cv2.addWeighted(img1,0.7,ssr_img,0.3,0,img2)
+        result = image_tool.clahe(img2)
         return result
 
 
