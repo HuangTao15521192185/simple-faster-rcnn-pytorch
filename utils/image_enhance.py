@@ -253,8 +253,8 @@ class Image_Enhance(object):
         #hsi_img = image_tool.RGB2HSI(dcp_img)
         ssr_img = SSRetinex().SSR_image(img)
         #bgr_img = image_tool.HSI2RGB(ssr_img)
-        cv2.addWeighted(cb_img,0.7,dcp_img,0.7,0,img1)
-        cv2.addWeighted(img1,0.7,ssr_img,0.3,0,img2)
+        cv2.addWeighted(ssr_img,0.5,dcp_img,0.5,0,img1)
+        cv2.addWeighted(img1,0.7,cb_img,0.3,0,img2)
         result = image_tool.clahe(img2)
         return result
 
@@ -267,6 +267,6 @@ if __name__ == '__main__':
     #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization_02.png', m)
     image_enhance = Image_Enhance()
     result = image_enhance(
-        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000064.jpg')
+        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088.jpg')
     cv2.imwrite(
-        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000064_out.jpg', result)
+        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088_out.jpg', result)
