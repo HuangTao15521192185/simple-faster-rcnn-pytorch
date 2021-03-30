@@ -33,7 +33,7 @@ class Config:
     pretrained_model = 'vgg16'
 
     # training
-    epoch = 14
+    epoch = 20
 
     use_adam = False  # Use Adam optimizer
     use_chainer = False  # try match everything as chainer
@@ -48,15 +48,14 @@ class Config:
     caffe_pretrain = False  # use caffe pretrained model instead of torchvision
     caffe_pretrain_path = 'checkpoints/vgg16_caffe.pth'
 
-    use_multi_conv = True
+    use_multi_conv = False
     # category
     VOC_BBOX_LABEL_NAMES = (
-        'aeroplane',
-        'bicycle',
-        'bird',
-        'boat'
+        'animal',
+        'plant',
+        'rock'
     )
-    label_number = 4
+    label_number = 3
 
     def _parse(self, kwargs):
         state_dict = self._state_dict()

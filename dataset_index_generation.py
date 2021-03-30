@@ -3,8 +3,8 @@
 import os
 import random  
   
-trainval_percent = 0.5  #trainval占比例多少
-train_percent = 0.5  #train数据集占trainval比例多少
+trainval_percent = 0.7  #trainval占比例多少
+train_percent = 0.3  #train数据集占trainval比例多少
 xmlfilepath = '../VOCdevkit/VOC2007/Annotations'  
 txtsavepath = '../VOCdevkit/VOC2007/ImageSets/Main'  
 total_xml = os.listdir(xmlfilepath)  

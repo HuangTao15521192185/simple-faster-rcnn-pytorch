@@ -88,11 +88,11 @@ class Transform(object):
         scale = o_H / H
         bbox = util.resize_bbox(bbox, (H, W), (o_H, o_W))
 
-        # horizontally flip
+        # horizontally and vertically flip
         img, params = util.random_flip(
-            img, x_random=True, return_param=True)
+            img, y_random=True, x_random=True, return_param=True)
         bbox = util.flip_bbox(
-            bbox, (o_H, o_W), x_flip=params['x_flip'])
+            bbox, (o_H, o_W), y_flip=params['y_flip'], x_flip=params['x_flip'])
 
         return img, bbox, label, scale
 

@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-
+import datetime
+import os 
 
 class DarkChannelPrior(object):
     def __init__(self, w=0.95, mf_r=7, gf_r=81, gf_eps=0.001, maxV1=0.80, bGamma=False):
@@ -246,6 +247,7 @@ class Image_Enhance(object):
     def __call__(self, image):
         img = cv2.imread(image)
         image_tool = Image_Tool()
+        starttime = datetime.datetime.now()
         img1 = img.copy()
         img2 = img.copy()
         cb_img=image_tool.colorbalance(img)
@@ -256,17 +258,19 @@ class Image_Enhance(object):
         cv2.addWeighted(ssr_img,0.5,dcp_img,0.5,0,img1)
         cv2.addWeighted(img1,0.7,cb_img,0.3,0,img2)
         result = image_tool.clahe(img2)
+        endtime = datetime.datetime.now()
+        print('image_enhance time consum=%s' %round((endtime-starttime).microseconds/1000000+(endtime-starttime).seconds,6))
         return result
 
 
 if __name__ == '__main__':
-    # darhchnnelprior = DarkChannelPrior()
-    # m = darhchnnelprior.deHaze(cv2.imread(
-    #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization.png'))
-    # cv2.imwrite(
-    #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization_02.png', m)
     image_enhance = Image_Enhance()
-    result = image_enhance(
-        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088.jpg')
-    cv2.imwrite(
-        '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088_out.jpg', result)
+    path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages'
+    jpglist = os.listdir(path)
+    for jpg in jpglist:
+        result = image_enhance(os.path.join(path, jpg))
+        cv2.imwrite(os.path.join(path, jpg), result)
+    # result = image_enhance(
+    #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088.jpg')
+    # cv2.imwrite(
+    #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088_out.jpg', result)

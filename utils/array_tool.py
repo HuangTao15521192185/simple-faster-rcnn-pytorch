@@ -27,3 +27,7 @@ def scalar(data):
         return data.reshape(1)[0]
     if isinstance(data, t.Tensor):
         return data.item()
+
+def resize(data,max_value=1):
+    if isinstance(data, np.ndarray):
+        return data/data.sum()*max_value

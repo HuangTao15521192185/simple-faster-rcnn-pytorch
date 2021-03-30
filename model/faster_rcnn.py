@@ -12,7 +12,6 @@ from data.dataset import preprocess
 from torch.nn import functional as F
 from utils.config import opt
 
-
 def nograd(f):
     def new_f(*args,**kwargs):
         with t.no_grad():

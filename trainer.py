@@ -198,7 +198,9 @@ class FasterRCNNTrainer(nn.Module):
             timestr = time.strftime('%m%d%H%M')
             save_path = 'checkpoints/fasterrcnn_%s' % timestr
             for k_, v_ in kwargs.items():
-                save_path += '_%s' % v_
+                if k_ == 'best_map':
+                    save_path += '_%s' % v_
+                    break
 
         save_dir = os.path.dirname(save_path)
         if not os.path.exists(save_dir):

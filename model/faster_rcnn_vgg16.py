@@ -1,4 +1,4 @@
-from __future__ import  absolute_import
+from __future__ import absolute_import
 import torch as t
 from torch import nn
 from torchvision.models import vgg16
@@ -18,10 +18,11 @@ def decom_vgg16():
             model.load_state_dict(t.load(opt.caffe_pretrain_path))
     else:
         model = vgg16(not opt.load_path)
-
     features = list(model.features)[:30]
     if opt.use_multi_conv:
-        features.append(Inception(512,128,(128,320),64))
+        features.append(Inception(256, 128, (128, 256), 64, (24, 64)))
+        features.append(nn.ReLU(inplace=True))
+        features.append(ResNetA(512,128,(128,256),512,128,(128,256),128,128,(128,256),512))
     classifier = model.classifier
 
     classifier = list(classifier)
@@ -38,33 +39,207 @@ def decom_vgg16():
 
     return nn.Sequential(*features), classifier
 
+
 class Inception(nn.Module):
-    def __init__(self,in_c,c1,c2,c3):
-        super(Inception,self).__init__()
+    def __init__(self, in_c, c1, c2, c3, c4):
+        super(Inception, self).__init__()
         self.p1 = nn.Sequential(
-            nn.Conv2d(in_c,c1,kernel_size=1),
+            nn.Conv2d(in_c, c1, kernel_size=1),
             nn.ReLU(inplace=True)
-        )  
+        )
         self.p2 = nn.Sequential(
-            nn.Conv2d(in_c,c2[0],kernel_size=1),
+            nn.Conv2d(in_c, c2[0], kernel_size=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(c2[0], c2[1], kernel_size=3,padding=1),
+            nn.Conv2d(c2[0], c2[1], kernel_size=3, padding=1),
             nn.ReLU(inplace=True)
         )
         self.p3 = nn.Sequential(
-            nn.MaxPool2d(kernel_size=3,stride=1,padding=1),
-            nn.Conv2d(in_c,c3,kernel_size=1),
+            nn.AvgPool2d(kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_c, c3, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p4 = nn.Sequential(
+            nn.Conv2d(in_c, c4[0], kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c4[0], c4[1], kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c4[1], c4[1], kernel_size=3, padding=1),
             nn.ReLU(inplace=True)
         )
         normal_init(self.p1[0], 0, 0.01)
         normal_init(self.p2[0], 0, 0.01)
         normal_init(self.p2[2], 0, 0.01)
         normal_init(self.p3[1], 0, 0.01)
+        normal_init(self.p4[0], 0, 0.01)
+        normal_init(self.p4[2], 0, 0.01)
+
     def forward(self, x):
         p1 = self.p1(x)
         p2 = self.p2(x)
         p3 = self.p3(x)
-        return t.cat((p1,p2,p3),dim=1)
+        p4 = self.p4(x)
+        return t.cat((p1, p2, p3, p4), dim=1)
+
+
+class ResNetA(nn.Module):
+    def __init__(self, in_c, c1, c2, c3, c4, c5, c6, c7, c8, c9):
+        super(ResNetA, self).__init__()
+        # ResNetA
+        self.p1 = nn.Sequential(
+            nn.Conv2d(in_c, c1, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p2 = nn.Sequential(
+            nn.Conv2d(in_c, c2[0], kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c2[0], c2[1], kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c2[1], c2[1], kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p3 = nn.Sequential(
+            nn.Conv2d(c1+c2[1], c3, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+        # ReducionA
+        self.p4 = nn.Sequential(
+            nn.Conv2d(c3, c4, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p5 = nn.Sequential(
+            nn.Conv2d(c3, c5[0], kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c5[0], c5[1], kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c5[1], c5[1], kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p6 = nn.Sequential(
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(c3, c6, kernel_size=1)
+        )
+        # ResNetB
+        self.p7 = nn.Sequential(
+            nn.Conv2d(c4+c5[1]+c6, c7, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p8 = nn.Sequential(
+            nn.Conv2d(c4+c5[1]+c6, c8[0], kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c8[0], c8[1], kernel_size=(1, 7), padding=(0, 3)),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c8[1], c8[1], kernel_size=(7, 1), padding=(3, 0)),
+            nn.ReLU(inplace=True)
+        )
+        self.p9 = nn.Sequential(
+            nn.Conv2d(c7+c8[1], c9, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+
+        self.relu = nn.ReLU(inplace=True)
+        normal_init(self.p1[0], 0, 0.01)
+        normal_init(self.p2[0], 0, 0.01)
+        normal_init(self.p2[2], 0, 0.01)
+        normal_init(self.p2[4], 0, 0.01)
+        normal_init(self.p3[0], 0, 0.01)
+        normal_init(self.p4[0], 0, 0.01)
+        normal_init(self.p5[0], 0, 0.01)
+        normal_init(self.p5[2], 0, 0.01)
+        normal_init(self.p5[4], 0, 0.01)
+        normal_init(self.p6[1], 0, 0.01)
+        normal_init(self.p7[0], 0, 0.01)
+        normal_init(self.p8[0], 0, 0.01)
+        normal_init(self.p8[2], 0, 0.01)
+        normal_init(self.p8[4], 0, 0.01)
+        normal_init(self.p9[0], 0, 0.01)
+
+    def forward(self, x):
+        p1 = self.p1(x)
+        p2 = self.p2(x)
+        p3 = self.p3(t.cat((p1, p2), dim=1))
+        resnetA = self.relu(x+p3)
+        p4 = self.p4(resnetA)
+        p5 = self.p5(resnetA)
+        p6 = self.p6(resnetA)
+        reducionA = self.relu(t.cat((p4, p5, p6), dim=1))
+        p7 = self.p7(reducionA)
+        p8 = self.p8(reducionA)
+        p9 = self.p9(t.cat((p7, p8), dim=1))
+        resnetB = self.relu(reducionA+p9)
+        return resnetB
+
+
+class ResNetB(nn.Module):
+    def __init__(self, in_c, c1, c2, c3, c4, c5, c6, c7):
+        super(ResNetB, self).__init__()
+        # ReductionB
+        self.p1 = nn.Sequential(
+            nn.Conv2d(in_c, c1, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p2 = nn.Sequential(
+            nn.Conv2d(in_c, c2[0], kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c2[0], c2[1], kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p3 = nn.Sequential(
+            nn.Conv2d(in_c, c3, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c3, c3, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p4 = nn.Sequential(
+            nn.Conv2d(in_c, c4, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.AvgPool2d(kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(c4, c4, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        # ResNetC
+        self.p5 = nn.Sequential(
+            nn.Conv2d(c1+c2[1]+c3+c4, c5, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p6 = nn.Sequential(
+            nn.Conv2d(c1+c2[1]+c3+c4, c6[0], kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c6[0], c6[1], kernel_size=(1, 3), padding=(0, 1)),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c6[1], c6[1], kernel_size=(3, 1), padding=(1, 0)),
+            nn.ReLU(inplace=True)
+        )
+        self.p7 = nn.Sequential(
+            nn.Conv2d(c5+c6[1], c7, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+
+        self.relu = nn.ReLU(inplace=True)
+        self.avgpool = nn.AvgPool2d(kernel_size=3, stride=1, padding=1)
+        normal_init(self.p1[0], 0, 0.01)
+        normal_init(self.p2[0], 0, 0.01)
+        normal_init(self.p2[2], 0, 0.01)
+        normal_init(self.p3[0], 0, 0.01)
+        normal_init(self.p3[2], 0, 0.01)
+        normal_init(self.p4[0], 0, 0.01)
+        normal_init(self.p4[3], 0, 0.01)
+        normal_init(self.p5[0], 0, 0.01)
+        normal_init(self.p6[0], 0, 0.01)
+        normal_init(self.p6[2], 0, 0.01)
+        normal_init(self.p6[4], 0, 0.01)
+        normal_init(self.p7[0], 0, 0.01)
+
+    def forward(self, x):
+        p1 = self.p1(x)
+        p2 = self.p2(x)
+        p3 = self.p3(x)
+        p4 = self.p4(x)
+        reductionB = self.relu(t.cat((p1, p2, p3, p4), dim=1))
+        p5 = self.p5(reductionB)
+        p6 = self.p6(reductionB)
+        p7 = self.p7(t.cat((p5, p6), dim=1))
+        resnetC = self.relu(reductionB+p7)
+        return self.avgpool(resnetC)
 
 
 class FasterRCNNVGG16(FasterRCNN):
@@ -90,7 +265,7 @@ class FasterRCNNVGG16(FasterRCNN):
                  ratios=[0.5, 1, 2],
                  anchor_scales=[8, 16, 32]
                  ):
-                 
+
         extractor, classifier = decom_vgg16()
 
         rpn = RegionProposalNetwork(
@@ -107,6 +282,8 @@ class FasterRCNNVGG16(FasterRCNN):
             classifier=classifier
         )
 
+        #expand_field = ResNetB(512,128, (128, 256), 64, 64, 128, (128,256),512)
+
         super(FasterRCNNVGG16, self).__init__(
             extractor,
             rpn,
@@ -119,7 +296,7 @@ class VGG16RoIHead(nn.Module):
     This class is used as a head for Faster R-CNN.
     This outputs class-wise localizations and classification based on feature
     maps in the given RoIs.
-    
+
     Args:
         n_class (int): The number of classes possibly including the background.
         roi_size (int): Height and width of the feature maps after RoI-pooling.
@@ -143,7 +320,7 @@ class VGG16RoIHead(nn.Module):
         self.n_class = n_class
         self.roi_size = roi_size
         self.spatial_scale = spatial_scale
-        self.roi = RoIPool( (self.roi_size, self.roi_size),self.spatial_scale)
+        self.roi = RoIPool((self.roi_size, self.roi_size), self.spatial_scale)
 
     def forward(self, x, rois, roi_indices):
         """Forward the chain.
@@ -168,7 +345,7 @@ class VGG16RoIHead(nn.Module):
         indices_and_rois = t.cat([roi_indices[:, None], rois], dim=1)
         # NOTE: important: yx->xy
         xy_indices_and_rois = indices_and_rois[:, [0, 2, 1, 4, 3]]
-        indices_and_rois =  xy_indices_and_rois.contiguous()
+        indices_and_rois = xy_indices_and_rois.contiguous()
 
         pool = self.roi(x, indices_and_rois)
         pool = pool.view(pool.size(0), -1)
@@ -184,7 +361,8 @@ def normal_init(m, mean, stddev, truncated=False):
     """
     # x is a parameter
     if truncated:
-        m.weight.data.normal_().fmod_(2).mul_(stddev).add_(mean)  # not a perfect approximation
+        m.weight.data.normal_().fmod_(2).mul_(stddev).add_(
+            mean)  # not a perfect approximation
     else:
         m.weight.data.normal_(mean, stddev)
         m.bias.data.zero_()
