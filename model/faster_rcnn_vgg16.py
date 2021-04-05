@@ -20,9 +20,8 @@ def decom_vgg16():
         model = vgg16(not opt.load_path)
     features = list(model.features)[:30]
     if opt.use_multi_conv:
-        features.append(Inception(256, 128, (128, 256), 64, (24, 64)))
-        features.append(nn.ReLU(inplace=True))
-        features.append(ResNetA(512,128,(128,256),512,128,(128,256),128,128,(128,256),512))
+        #features[19]=Inception(512, 128, (128, 256), 64, (24, 64))
+        features[28]=Inception(512, 128, (128, 256), 64, (24, 64))
     classifier = model.classifier
 
     classifier = list(classifier)

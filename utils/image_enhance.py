@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import datetime
 import os 
+from PIL import Image
 
 class DarkChannelPrior(object):
     def __init__(self, w=0.95, mf_r=7, gf_r=81, gf_eps=0.001, maxV1=0.80, bGamma=False):
@@ -261,16 +262,43 @@ class Image_Enhance(object):
         endtime = datetime.datetime.now()
         print('image_enhance time consum=%s' %round((endtime-starttime).microseconds/1000000+(endtime-starttime).seconds,6))
         return result
+    
+    def api(self,img):
+        img = img.transpose((1,2,0))
+        if img.dtype != np.uint8:
+            img = img.astype(np.uint8)
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) 
+        image_tool = Image_Tool()
+        starttime = datetime.datetime.now()
+        img1 = img.copy()
+        img2 = img.copy()
+        cb_img=image_tool.colorbalance(img)
+        dcp_img = DarkChannelPrior().deHaze(img)  
+        #hsi_img = image_tool.RGB2HSI(dcp_img)
+        ssr_img = SSRetinex().SSR_image(img)
+        #bgr_img = image_tool.HSI2RGB(ssr_img)
+        cv2.addWeighted(ssr_img,0.5,dcp_img,0.5,0,img1)
+        cv2.addWeighted(img1,0.7,cb_img,0.3,0,img2)
+        result = image_tool.clahe(img2)
+        endtime = datetime.datetime.now()
+        print('image_enhance time consum=%s' %round((endtime-starttime).microseconds/1000000+(endtime-starttime).seconds,6))
+        result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+        if result.dtype != np.float32:
+            result = result.astype(np.float32)
+        result = result.transpose((2,0,1))
+        return result
 
 
 if __name__ == '__main__':
     image_enhance = Image_Enhance()
-    path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages'
-    jpglist = os.listdir(path)
-    for jpg in jpglist:
-        result = image_enhance(os.path.join(path, jpg))
-        cv2.imwrite(os.path.join(path, jpg), result)
-    # result = image_enhance(
-    #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088.jpg')
+    #img = read_image('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
+    #result = image_enhance.api(img)
+    # path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak'
+    # jpglist = os.listdir(path)
+    # for jpg in jpglist:
+    #     result = image_enhance(os.path.join(path, jpg))
+    #     cv2.imwrite(os.path.join(path, jpg), result)
+    result = image_enhance(
+        '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
     # cv2.imwrite(
-    #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000088_out.jpg', result)
+    #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000001_out.jpg', result)

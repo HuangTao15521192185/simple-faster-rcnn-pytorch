@@ -24,7 +24,7 @@ rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
 resource.setrlimit(resource.RLIMIT_NOFILE, (20480, rlimit[1]))
 
 matplotlib.use('agg')
-
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 def eval(dataloader, faster_rcnn, vis, test_num=10000):
     pred_bboxes, pred_labels, pred_scores = list(), list(), list()
@@ -33,12 +33,12 @@ def eval(dataloader, faster_rcnn, vis, test_num=10000):
         # plot groud truth bboxes
         sizes = [sizes[0][0].item(), sizes[1][0].item()]
         pred_bboxes_, pred_labels_, pred_scores_ = faster_rcnn.predict(imgs, [sizes])
-        img= imgs.cuda().float()
+        img = imgs.cuda().float()
         ori_img_ = inverse_normalize(at.tonumpy(img[0]))
         pred_img = visdom_bbox(ori_img_,
-                                       at.tonumpy(pred_bboxes_[0]),
-                                       at.tonumpy(pred_labels_[0]).reshape(-1),
-                                       at.tonumpy(pred_scores_[0]))
+                               at.tonumpy(pred_bboxes_[0]),
+                               at.tonumpy(pred_labels_[0]).reshape(-1),
+                               at.tonumpy(pred_scores_[0]))
         vis.img('test_pred_img', pred_img)
         gt_bboxes += list(gt_bboxes_.numpy())
         gt_labels += list(gt_labels_.numpy())
@@ -46,7 +46,8 @@ def eval(dataloader, faster_rcnn, vis, test_num=10000):
         pred_bboxes += pred_bboxes_
         pred_labels += pred_labels_
         pred_scores += pred_scores_
-        if ii == test_num: break
+        if ii == test_num:
+            break
 
     result = eval_detection_voc(
         pred_bboxes, pred_labels, pred_scores,
@@ -60,8 +61,8 @@ def train(**kwargs):
 
     dataset = Dataset(opt)
     print('load data')
-    dataloader = data_.DataLoader(dataset, \
-                                  batch_size=1, \
+    dataloader = data_.DataLoader(dataset,
+                                  batch_size=1,
                                   shuffle=True, \
                                   # pin_memory=True,
                                   num_workers=opt.num_workers)
@@ -69,7 +70,7 @@ def train(**kwargs):
     test_dataloader = data_.DataLoader(testset,
                                        batch_size=1,
                                        num_workers=opt.test_num_workers,
-                                       shuffle=False, \
+                                       shuffle=False,
                                        pin_memory=True
                                        )
     faster_rcnn = FasterRCNNVGG16()
@@ -106,7 +107,8 @@ def train(**kwargs):
                 trainer.vis.img('gt_img', gt_img)
 
                 # plot predicti bboxes
-                _bboxes, _labels, _scores = trainer.faster_rcnn.predict([ori_img_], visualize=True)
+                _bboxes, _labels, _scores = trainer.faster_rcnn.predict(
+                    [ori_img_], visualize=True)
                 pred_img = visdom_bbox(ori_img_,
                                        at.tonumpy(_bboxes[0]),
                                        at.tonumpy(_labels[0]).reshape(-1),
@@ -114,13 +116,15 @@ def train(**kwargs):
                 trainer.vis.img('pred_img', pred_img)
 
                 # rpn confusion matrix(meter)
-                trainer.vis.text(str(trainer.rpn_cm.value().tolist()), win='rpn_cm')
+                trainer.vis.text(
+                    str(trainer.rpn_cm.value().tolist()), win='rpn_cm')
                 # roi confusion matrix
-                trainer.vis.img('roi_cm', at.totensor(at.resize(trainer.roi_cm.conf,256), False).float())
-                print(at.totensor(at.resize(trainer.roi_cm.conf), False).float())
-        eval_result = eval(test_dataloader, faster_rcnn, vis=vis, test_num=opt.test_num)
+                roi_cm = at.totensor(trainer.roi_cm.conf, False).float()
+                trainer.vis.img('roi_cm', roi_cm)
+                print('roi_cm=', roi_cm)
+        eval_result = eval(test_dataloader, faster_rcnn,
+                           vis=vis, test_num=opt.test_num)
         best_ap = dict(zip(opt.VOC_BBOX_LABEL_NAMES, eval_result['ap']))
-        print('ap=%s,map=%s' %(best_ap,eval_result['map']))
         trainer.vis.plot('test_map', eval_result['map'])
         lr_ = trainer.faster_rcnn.optimizer.param_groups[0]['lr']
         log_info = 'lr:{}, map:{},loss:{}'.format(str(lr_),
@@ -130,18 +134,20 @@ def train(**kwargs):
 
         if eval_result['map'] > best_map:
             best_map = eval_result['map']
-            best_path = trainer.save(best_map=best_map, best_ap=best_ap)
+            best_path = trainer.save(
+                best_map=best_map, best_ap=best_ap)
         if epoch == 9:
             trainer.load(best_path)
             trainer.faster_rcnn.scale_lr(opt.lr_decay)
             lr_ = lr_ * opt.lr_decay
 
-        # if epoch == 13: 
+        # if epoch == 13:
         #     break
     endtime = datetime.datetime.now()
     train_consum = (endtime-starttime).seconds
-    print("train_consum=",train_consum)
-    trainer.save(best_map=best_map, best_ap=best_ap, train_consum=train_consum)
+    print("train_consum=", train_consum)
+    # trainer.save(best_map=best_map, best_ap=best_ap,
+    #              precision=precision, recall=recall, train_consum=train_consum)
 
 
 if __name__ == '__main__':
