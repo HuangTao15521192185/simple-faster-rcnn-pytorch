@@ -14,17 +14,18 @@ import matplotlib.pyplot as plt
 
 
 class Model(object):
-    def __init__(self,model=''):
-        #os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    def __init__(self, model=''):
+        os.environ["CUDA_VISIBLE_DEVICES"] = '1'
         faster_rcnn = FasterRCNNVGG16()
         self.trainer = FasterRCNNTrainer(faster_rcnn).cuda()
         self.trainer.load(model)
         opt.caffe_pretrain = False  # this model was trained from torchvision-pretrained model
-        
-        self.isneed_enhance = True
+
+        self.isneed_enhance = False
         self.imgs_path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/'
-        self.imgs_vis_path  = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/'
-    def predict(self,imgs=[]):
+        self.imgs_vis_path = ''
+
+    def predict(self, imgs=[]):
         imglist = []
         for i in imgs:
             img_path = os.path.join(self.imgs_path, i)
@@ -33,9 +34,10 @@ class Model(object):
                 img = Image_Enhance().api(img)
             img = t.from_numpy(img)[None]
             imglist.append(img)
-        for index,img in enumerate(imglist):
+        for index, img in enumerate(imglist):
             starttime = datetime.datetime.now()
-            _bboxes, _labels, _scores = self.trainer.faster_rcnn.predict(img, visualize=True)
+            _bboxes, _labels, _scores = self.trainer.faster_rcnn.predict(
+                img, visualize=True)
             endtime = datetime.datetime.now()
             print('predict time consum=%s' % round(
                 (endtime-starttime).microseconds/1000000+(endtime-starttime).seconds, 6))
@@ -50,7 +52,19 @@ class Model(object):
             fig = ax.get_figure()
             fig.savefig("output.png")
 
+    def single_predict(self, img_path=''):
+        starttime = datetime.datetime.now()
+        img = read_image(img_path)
+        img = t.from_numpy(img)[None]
+        _bboxes, _labels, _scores = self.trainer.faster_rcnn.predict(
+            img, visualize=True)
+        endtime = datetime.datetime.now()
+        print('predict time consum=%s' % round(
+            (endtime-starttime).microseconds/1000000+(endtime-starttime).seconds, 6))
 
-if __name__=='__main__':
-    model=Model('model_bak/fasterrcnn_03311911_0.8289721270669189_src_enhance')
-    model.predict(imgs=['000777.jpg','000802.jpg','000009.jpg','000923.jpg','000840.jpg','000349.jpg'])
+
+if __name__ == '__main__':
+    model = Model('model_bak/fasterrcnn_04011536_0.7989942260324957_scr')
+    model.predict(imgs=['000777.jpg', '000802.jpg',
+                        '000009.jpg', '000923.jpg', '000840.jpg', '000349.jpg'])
+    #model.single_predict(os.path.join(model.imgs_path, '000349.jpg'))
