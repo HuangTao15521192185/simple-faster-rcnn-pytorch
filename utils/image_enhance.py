@@ -4,6 +4,44 @@ import datetime
 import os 
 from PIL import Image
 
+
+def read_image(path, dtype=np.float32, color=True):
+    """Read an image from a file.
+
+    This function reads an image from given file. The image is CHW format and
+    the range of its value is :math:`[0, 255]`. If :obj:`color = True`, the
+    order of the channels is RGB.
+
+    Args:
+        path (str): A path of image file.
+        dtype: The type of array. The default value is :obj:`~numpy.float32`.
+        color (bool): This option determines the number of channels.
+            If :obj:`True`, the number of channels is three. In this case,
+            the order of the channels is RGB. This is the default behaviour.
+            If :obj:`False`, this function returns a grayscale image.
+
+    Returns:
+        ~numpy.ndarray: An image.
+    """
+
+    f = Image.open(path)
+    try:
+        if color:
+            img = f.convert('RGB')
+        else:
+            img = f.convert('P')
+        img = np.asarray(img, dtype=dtype)
+    finally:
+        if hasattr(f, 'close'):
+            f.close()
+
+    if img.ndim == 2:
+        # reshape (H, W) -> (1, H, W)
+        return img[np.newaxis]
+    else:
+        # transpose (H, W, C) -> (C, H, W)
+        return img.transpose((2, 0, 1))
+
 class DarkChannelPrior(object):
     def __init__(self, w=0.95, mf_r=7, gf_r=81, gf_eps=0.001, maxV1=0.80, bGamma=False):
         self.w = w  # 去雾程度
@@ -291,14 +329,13 @@ class Image_Enhance(object):
 
 if __name__ == '__main__':
     image_enhance = Image_Enhance()
-    #img = read_image('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
-    #result = image_enhance.api(img)
+    img = read_image('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
+    result = image_enhance.api(img)
     # path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak'
     # jpglist = os.listdir(path)
     # for jpg in jpglist:
     #     result = image_enhance(os.path.join(path, jpg))
     #     cv2.imwrite(os.path.join(path, jpg), result)
-    result = image_enhance(
-        '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
+    #result = image_enhance('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
     # cv2.imwrite(
     #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000001_out.jpg', result)

@@ -121,7 +121,7 @@ def train(**kwargs):
                 # roi confusion matrix
                 roi_cm = at.totensor(trainer.roi_cm.conf, False).float()
                 trainer.vis.img('roi_cm', roi_cm)
-                print('roi_cm=', roi_cm)
+                #print('roi_cm=', roi_cm)
         eval_result = eval(test_dataloader, faster_rcnn,
                            vis=vis, test_num=opt.test_num)
         best_ap = dict(zip(opt.VOC_BBOX_LABEL_NAMES, eval_result['ap']))

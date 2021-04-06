@@ -20,8 +20,8 @@ def decom_vgg16():
         model = vgg16(not opt.load_path)
     features = list(model.features)[:30]
     if opt.use_multi_conv:
-        #features[19]=Inception(512, 128, (128, 256), 64, (24, 64))
-        features[28]=Inception(512, 128, (128, 256), 64, (24, 64))
+        features[28]=Inception3(512, 128, (128, 256), 128)
+        #features[28]=Inception(512, 128, (128, 256), 64, (24, 64))
     classifier = model.classifier
 
     classifier = list(classifier)
@@ -78,6 +78,36 @@ class Inception(nn.Module):
         p3 = self.p3(x)
         p4 = self.p4(x)
         return t.cat((p1, p2, p3, p4), dim=1)
+
+
+class Inception3(nn.Module):
+    def __init__(self, in_c, c1, c2, c3):
+        super(Inception3, self).__init__()
+        self.p1 = nn.Sequential(
+            nn.Conv2d(in_c, c1, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p2 = nn.Sequential(
+            nn.Conv2d(in_c, c2[0], kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c2[0], c2[1], kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+        self.p3 = nn.Sequential(
+            nn.AvgPool2d(kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_c, c3, kernel_size=1),
+            nn.ReLU(inplace=True)
+        )
+        normal_init(self.p1[0], 0, 0.01)
+        normal_init(self.p2[0], 0, 0.01)
+        normal_init(self.p2[2], 0, 0.01)
+        normal_init(self.p3[1], 0, 0.01)
+
+    def forward(self, x):
+        p1 = self.p1(x)
+        p2 = self.p2(x)
+        p3 = self.p3(x)
+        return t.cat((p1, p2, p3), dim=1)
 
 
 class ResNetA(nn.Module):
