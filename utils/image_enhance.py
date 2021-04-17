@@ -329,13 +329,13 @@ class Image_Enhance(object):
 
 if __name__ == '__main__':
     image_enhance = Image_Enhance()
-    img = read_image('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
-    result = image_enhance.api(img)
-    # path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak'
-    # jpglist = os.listdir(path)
-    # for jpg in jpglist:
-    #     result = image_enhance(os.path.join(path, jpg))
-    #     cv2.imwrite(os.path.join(path, jpg), result)
-    #result = image_enhance('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
+    #img = read_image('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
+    #result = image_enhance.api(img)
+    path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/urpc_JPEG'
+    jpglist = os.listdir(path)
+    for jpg in jpglist:
+        result = image_enhance(os.path.join(path, jpg))
+        cv2.imwrite(os.path.join(path, jpg), result)
+    # result = image_enhance('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
     # cv2.imwrite(
     #     '/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/000001_out.jpg', result)

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 class Model(object):
     def __init__(self, model=''):
-        os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+        os.environ["CUDA_VISIBLE_DEVICES"] = '0'
         faster_rcnn = FasterRCNNVGG16()
         self.trainer = FasterRCNNTrainer(faster_rcnn).cuda()
         self.trainer.load(model)
@@ -61,10 +61,15 @@ class Model(object):
         endtime = datetime.datetime.now()
         print('predict time consum=%s' % round(
             (endtime-starttime).microseconds/1000000+(endtime-starttime).seconds, 6))
+        ax = vis_bbox(at.tonumpy(img[0]),
+                      at.tonumpy(_bboxes[0]),
+                      at.tonumpy(_labels[0]).reshape(-1),
+                      at.tonumpy(_scores[0]).reshape(-1))
+        fig = ax.get_figure()
+        fig.savefig("output.png")
 
 
 if __name__ == '__main__':
-    model = Model('model_bak/fasterrcnn_04011536_0.7989942260324957_scr')
-    model.predict(imgs=['000777.jpg', '000802.jpg',
-                        '000009.jpg', '000923.jpg', '000840.jpg', '000349.jpg'])
-    #model.single_predict(os.path.join(model.imgs_path, '000349.jpg'))
+    model = Model('model_bak/fasterrcnn_03311911_0.8289721270669189_src_enhance')
+    model.predict(imgs=['000376.jpg', '000377.jpg','000379.jpg', '000381.jpg', '000382.jpg', '000386.jpg'])
+    #model.single_predict('/home/lenovo/4T/Taohuang/simple-faster-rcnn-pytorch/utils/atomization/test.jpg')

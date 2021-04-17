@@ -15,6 +15,7 @@ from trainer import FasterRCNNTrainer
 from utils import array_tool as at
 from utils.vis_tool import visdom_bbox,Visualizer
 from utils.eval_tool import eval_detection_voc
+from model_tool import plot_confusion_matrix
 
 # fix for ulimit
 # https://github.com/pytorch/pytorch/issues/973#issuecomment-346405667
@@ -24,7 +25,7 @@ rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
 resource.setrlimit(resource.RLIMIT_NOFILE, (20480, rlimit[1]))
 
 matplotlib.use('agg')
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 def eval(dataloader, faster_rcnn, vis, test_num=10000):
     pred_bboxes, pred_labels, pred_scores = list(), list(), list()
@@ -121,7 +122,7 @@ def train(**kwargs):
                 # roi confusion matrix
                 roi_cm = at.totensor(trainer.roi_cm.conf, False).float()
                 trainer.vis.img('roi_cm', roi_cm)
-                #print('roi_cm=', roi_cm)
+                
         eval_result = eval(test_dataloader, faster_rcnn,
                            vis=vis, test_num=opt.test_num)
         best_ap = dict(zip(opt.VOC_BBOX_LABEL_NAMES, eval_result['ap']))
@@ -133,6 +134,8 @@ def train(**kwargs):
         trainer.vis.log(log_info)
 
         if eval_result['map'] > best_map:
+            print('roi_cm=\n', trainer.roi_cm.value())
+            plot_confusion_matrix(trainer.roi_cm.value(), classes=('animal','plant','rock','background'), normalize=False, title='Normalized Confusion Matrix')
             best_map = eval_result['map']
             best_path = trainer.save(
                 best_map=best_map, best_ap=best_ap)

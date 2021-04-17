@@ -54,6 +54,11 @@ class Config:
         'animal',
         'plant',
         'rock'
+        # 'holothurian',  #海参
+        # 'echinus',      #海胆
+        # 'scallop',      #扇贝
+        # 'starfish',     #海星
+        # 'waterweeds'    #海草
     )
     label_number = 3
 
