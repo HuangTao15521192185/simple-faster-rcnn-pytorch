@@ -294,8 +294,8 @@ class Image_Enhance(object):
         #hsi_img = image_tool.RGB2HSI(dcp_img)
         ssr_img = SSRetinex().SSR_image(img)
         #bgr_img = image_tool.HSI2RGB(ssr_img)
-        cv2.addWeighted(ssr_img,0.5,dcp_img,0.5,0,img1)
-        cv2.addWeighted(img1,0.7,cb_img,0.3,0,img2)
+        cv2.addWeighted(ssr_img,0.824,dcp_img,0.176,0,img1)
+        cv2.addWeighted(img1,0.85,cb_img,0.15,0,img2)
         result = image_tool.clahe(img2)
         endtime = datetime.datetime.now()
         print('image_enhance time consum=%s' %round((endtime-starttime).microseconds/1000000+(endtime-starttime).seconds,6))
@@ -331,7 +331,7 @@ if __name__ == '__main__':
     image_enhance = Image_Enhance()
     #img = read_image('/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_bak/000802.jpg')
     #result = image_enhance.api(img)
-    path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/urpc_JPEG'
+    path = '/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages'
     jpglist = os.listdir(path)
     for jpg in jpglist:
         result = image_enhance(os.path.join(path, jpg))

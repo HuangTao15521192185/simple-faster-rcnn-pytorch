@@ -87,6 +87,24 @@ class Dataset_tool(object):
                             break
             f.close()
         print(count)
+    def divide_dataset(self,txt_index,annotizations,jpeg):
+        txt_list=['trainval','test']
+        for txt in txt_list:
+            os.system('mkdir -p %s/%s' %(annotizations,txt))
+            os.system('mkdir -p %s/%s' %(jpeg,txt))
+            f = open(os.path.join(txt_index,txt+'.txt'),'r')
+            lines = f.readlines()
+            for line in lines:      
+                xml = os.path.join(annotizations,line.replace('\n','')+'.xml')
+                jpg = os.path.join(jpeg,line.replace('\n','')+'.jpg')
+                cmd1 = 'cp  %s %s/%s/' %(xml,annotizations,txt)
+                cmd2 = 'cp  %s %s/%s/' %(jpg,jpeg,txt)
+                print('cmd1=',cmd1)
+                print('cmd2=',cmd2)
+                os.system(cmd1)
+                os.system(cmd2)
+
+
 
 
 def random_filename(filepath='.'):
@@ -100,6 +118,6 @@ def random_filename(filepath='.'):
 if __name__ == '__main__':
     # random_filename('./dataset')
     dataset_tool = Dataset_tool()
-    dataset_tool.replace_img(src_path='/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages_src',
-                             dst_path='/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/JPEGImages', 
-                             txt_path='/home/lenovo/4T/Taohuang/VOCdevkit/VOC2007/ImageSets/Main/test.txt')
+    dataset_tool.divide_dataset(txt_index='/home/lenovo/4T/Taohuang/underwater-object-detection-mmdetection/data/Main',
+    annotizations='/home/lenovo/4T/Taohuang/underwater-object-detection-mmdetection/data/train/box',
+    jpeg='/home/lenovo/4T/Taohuang/underwater-object-detection-mmdetection/data/train/image')
